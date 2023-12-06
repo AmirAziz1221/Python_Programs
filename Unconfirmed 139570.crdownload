@@ -1,0 +1,599 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # PreProcessing 
+
+# # importing libraries
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+
+# ### Data Loading and Exploration | Cleaning 
+
+# In[2]:
+
+
+df=pd.read_csv('googleplaystore.csv')
+df.head()
+
+
+# In[3]:
+
+
+# set options to be maximum for rows and columns
+pd.set_option('display.max_columns',None)
+pd.set_option('display.max_rows',None)
+
+
+# In[4]:
+
+
+# Hide all warnings
+import warnings
+warnings.filterwarnings('ignore')
+
+
+# In[5]:
+
+
+df.columns
+
+
+# In[6]:
+
+
+print("The number of rows are",df.shape[0]," and columns are",df.shape[1])
+
+
+# In[7]:
+
+
+df.info()
+
+
+# In[8]:
+
+
+df.describe()
+
+
+# # how to make Size a numeric column?
+
+# In[9]:
+
+
+df['Size'].unique()
+
+
+# ### Observations
+# - veries with device
+# - M
+# - K
+
+# In[10]:
+
+
+df['Size'].isnull().sum()
+
+
+# - No missing value in size 
+
+# In[11]:
+
+
+#verify the number of values| obsrtvation
+df['Size'].loc[df['Size'].str.contains('M')].value_counts().sum()
+
+
+# In[12]:
+
+
+df['Size'].loc[df['Size'].str.contains('k')].value_counts().sum()
+
+
+# In[13]:
+
+
+df['Size'].loc[df['Size'].str.contains('Varies with device')].value_counts().sum()
+
+
+# In[14]:
+
+
+8830+316+1695
+
+
+# In[15]:
+
+
+len(df)
+
+
+# In[16]:
+
+
+# convert the whole size column into bytes
+# let's define a function
+def convert_size(size):
+    if isinstance(size, str):
+        if 'k' in size:
+            return float(size.replace('k', ""))*1024
+        elif 'M' in size:
+            return float(size.replace('M', ""))*1024*1024
+        elif 'Varies with  device' in size:
+            return np.nan
+    return size
+
+
+# In[17]:
+
+
+df['Size']
+
+
+# In[18]:
+
+
+# let's apply this funtion
+df['Size']=df['Size'].apply(convert_size)
+
+
+# In[19]:
+
+
+df['Size']
+
+
+# In[20]:
+
+
+#rename
+df.rename(columns={'Size':"Size_in_bytes"},inplace=True)
+
+
+# In[21]:
+
+
+df.head()
+
+
+# In[22]:
+
+
+df['Size_in_bytes'] = pd.to_numeric(df['Size_in_bytes'], errors='coerce')
+df['Size_in_Mb'] = df['Size_in_bytes'] / (1024 * 1024)
+
+
+# In[23]:
+
+
+#let's take care of installs
+df['Installs'].unique()
+
+
+# In[24]:
+
+
+df['Installs'].value_counts()
+
+
+# In[25]:
+
+
+df['Installs'].isnull().sum()
+
+
+# - no missing values
+
+# ### Observations
+# - remove + sign
+# - remove ,
+# - Convert the column into an integer
+
+# In[26]:
+
+
+df['Installs'] = df['Installs'].apply(lambda x: x.replace('+', '') if '+' in str(x) else x)
+
+
+# In[27]:
+
+
+df['Installs'] = df['Installs'].apply(lambda x: x.replace(',', '') if ',' in str(x) else x)
+
+
+# In[28]:
+
+
+df['Installs']= df['Installs'].apply(lambda x: int(x))
+
+
+# In[29]:
+
+
+df["Installs"].value_counts()
+
+
+# In[30]:
+
+
+df["Installs"].value_counts()
+
+
+# In[31]:
+
+
+df.describe()
+
+
+# # Price column 
+
+# In[32]:
+
+
+df['Price'].value_counts()
+
+
+# ### Observations 
+# - $ sign
+
+# In[33]:
+
+
+df['Price'].loc[df['Price'].str.contains('\$')].value_counts().sum()
+
+
+# In[34]:
+
+
+df['Price'].loc[(df['Price'].str.contains('0')) & (~df['Price'].str.contains('\$'))].value_counts().sum()
+
+
+# In[35]:
+
+
+df['Price'] = df['Price'].apply(lambda x: x.replace('$', '') if '$' in str(x) else x)
+
+
+# In[36]:
+
+
+df['Price'].value_counts()
+
+
+# In[37]:
+
+
+# Now we can conver it into numerics
+
+
+# In[38]:
+
+
+df['Price'] = df['Price'].apply(lambda x: float(x))
+
+
+# In[39]:
+
+
+df['Price']
+
+
+# In[40]:
+
+
+df.describe()
+
+
+# In[41]:
+
+
+# using  string print min, max and average prices of the app
+print("Min Price is", df['Price'].min())
+print("Max Price is", df['Price'].max())
+print("Average Price is", df['Price'].mean())
+
+
+# In[42]:
+
+
+# missing values inside the Data
+
+
+# In[43]:
+
+
+df.isnull().sum().sort_values(ascending=False)
+
+
+# In[44]:
+
+
+# find missing values percentage in data 
+round(df.isnull().sum()/len(df)*100,2).sort_values(ascending=False)
+
+
+# In[45]:
+
+
+# total number of missing values
+df.isnull().sum().sum()
+
+
+# In[46]:
+
+
+#Plot missing values
+plt.figure(figsize=(16,8))
+sns.heatmap(df.isnull(),yticklabels=False,cbar=False, cmap='viridis')
+
+
+# In[47]:
+
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(16, 8))
+missing_percentage = df.isnull().sum() / len(df) * 100
+missing_percentage.plot(kind='bar')
+
+# Adding labels and title
+plt.xlabel('Columns')
+plt.ylabel('Percentage')
+plt.title('Percentage of missing values in each column')
+
+plt.show()  # Display the plot
+
+
+# In[48]:
+
+
+plt.figure(figsize=(16, 8))
+missing_percentage = df.isnull().sum() / len(df) * 100
+missing_percentage[missing_percentage < 1].plot(kind='bar')
+
+# Adding labels and title
+plt.xlabel('Columns')
+plt.ylabel('Percentage')
+plt.title('Percentage of missing values in each column')
+
+plt.show()  # Display the plot
+
+
+# # From Last Updated Extract 
+# - day
+# - month
+# - year
+
+# In[49]:
+
+
+# Convert 'Last Updated' column to datetime format
+df['Last Updated'] = pd.to_datetime(df['Last Updated'])
+
+# Extract day, month, and year into separate columns
+df['Day'] = df['Last Updated'].dt.day
+df['Month'] = df['Last Updated'].dt.month
+df['Year'] = df['Last Updated'].dt.year
+
+
+# In[50]:
+
+
+df.head()
+
+
+# In[51]:
+
+
+from scipy import stats
+
+
+# # Dealing with the Missing values
+
+# In[52]:
+
+
+(df.isnull().sum()/len(df)*100).sort_values(ascending=False)
+
+
+# In[53]:
+
+
+df.describe()
+
+
+# In[ ]:
+
+
+
+
+
+# In[54]:
+
+
+# make a correlation matrix of numeric columns
+plt.figure(figsize=(16,10))
+numeric_cols = ['Rating','Reviews','Size_in_bytes','Installs','Price','Size_in_Mb']
+sns.heatmap(df[numeric_cols].corr(), annot = True)
+
+
+# In[55]:
+
+
+df[numeric_cols].corr()
+
+
+# In[56]:
+
+
+#remove rows containing NaN or infinite Values
+df_clean=df.dropna()
+# Calculate Pearson's R between Reviews and Installs
+pearson_r = stats.pearsonr(df_clean['Reviews'], df_clean['Installs'])
+print("Pearson's R between Reviews and Installs:\n ", pearson_r)
+
+
+# In[57]:
+
+
+print("Lenth if DataFrame before removinig null values:",len(df))
+
+
+# In[58]:
+
+
+#Remove the rows having null values in the 
+df.dropna(subset=['Current Ver','Android Ver','Category','Type','Genres'], inplace=True)
+
+
+# In[59]:
+
+
+# length after removing null values
+print("Lenght of the DataFrame after romoving null values:",len(df))
+
+
+# - we have removed 12 rows having null values in the Current Ver,Android Ver,Category,Type and Genres columns.
+
+# In[62]:
+
+
+print(df.columns)
+
+
+# In[66]:
+
+
+# lets check again null values
+df.isnull().sum().sort_values(ascending=False)
+df['Installs'].loc[df['Rating'].isnull()].value_counts()
+
+
+# In[67]:
+
+
+df.columns
+
+
+# In[69]:
+
+
+# use groupby function to find the trend of Rating in each Installs_category
+df.groupby('Installs')['Rating'].describe()
+
+
+# In[70]:
+
+
+plt.figure(figsize=(16,8))
+sns.boxplot(x='Installs', y='Rating',data=df)
+
+
+# In[71]:
+
+
+plt.figure(figsize=(16,6))
+sns.scatterplot(x='Rating',y='Reviews',hue='Installs',data=df)
+
+
+# In[72]:
+
+
+plt.figure(figsize=(16,6))
+sns.scatterplot(x='Reviews',y='Installs',data=df)
+
+
+# In[74]:
+
+
+plt.figure(figsize=(16,6))
+sns.scatterplot(x=np.log10(df['Reviews']), y=np.log10(df['Installs']),data=df)
+
+
+# In[75]:
+
+
+plt.figure(figsize=(16,6))
+sns.lmplot(x='Reviews',y='Installs',data=df)
+
+
+# # Observation 
+#   - Rating and Reviews is directly proportional to the Installation
+
+# # Duplicates
+#   - romoving duplicate values because for accuracy  
+
+# In[78]:
+
+
+# Total duplicate values
+df.duplicated().sum()
+
+
+# In[80]:
+
+
+# find duplicate if any in the 'App' column
+df['App'].duplicated().sum()
+
+
+# In[81]:
+
+
+for col in df.columns:
+    print('Number of duplicates in ', col,' column are:',df[col].duplicated().sum())
+
+
+#   - this mean that the only better way to find duplicates is to check for whole data
+
+# In[82]:
+
+
+# print the number of duplicated in df
+print('Number of duplicated in df are: ', df.duplicated().sum())
+
+
+#   - find and watch all duplicates if they are real!
+
+# In[83]:
+
+
+#find exact duplicates and print them
+df[df['App'].duplicated(keep=False)].sort_values(by='App')
+
+
+# # Now 
+#   - Remove Duplicates
+
+# In[84]:
+
+
+df.drop_duplicates(inplace=True)
+
+
+# In[86]:
+
+
+# Print the number of rows and columns after removing duplicates
+print('Number of rows after removinig Duplicates: ', df.shape[0],' and Columns: ' , df.shape[1])
+
+
+#   - Now we have removed 483 duplicates from the dataset and have 10346 rows left
+
+# ---
+
+# # 3. Insights from Data
+
+# In[ ]:
+
+
+
+
